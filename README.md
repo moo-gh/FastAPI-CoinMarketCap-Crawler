@@ -1,4 +1,3 @@
-### English Bot
-This going to be a Telegram bot that helps you to master new vocabularies.
+# FastAPI CoinMarketCap Crawler
 
-Implement by FastAPI
+A Dockerized FastAPI application that crawls the top 50 high-volume cryptocurrencies from CoinMarketCap and sends their prices to a Telegram channel.
