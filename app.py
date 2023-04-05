@@ -39,35 +39,45 @@ class TelegramSender:
         except Exception as e:
             logger.error(f"Error sending message to Telegram: {e}")
             return False
+    
+    async def send_multiple_messages(self, messages):
+        """Send multiple messages to Telegram channel"""
+        success_count = 0
+        for message in messages:
+            try:
+                await self.bot.send_message(
+                    chat_id=self.channel_id,
+                    text=message
+                )
+                success_count += 1
+                # Small delay to avoid rate limiting
+                await asyncio.sleep(0.1)
+            except Exception as e:
+                logger.error(f"Error sending message '{message}': {e}")
+        
+        logger.info(f"Sent {success_count}/{len(messages)} messages to Telegram")
+        return success_count > 0
 
-def format_coin_message(coins):
-    """Format coins data for Telegram message"""
-    if not coins:
-        return "No coin data available"
+def format_coin_message(coin, position):
+    """Format single coin data for Telegram message"""
+    symbol = coin["symbol"]
+    price = coin["price"]
+    currency = coin["currency"]
     
-    message = "🪙 <b>Top Cryptocurrency Prices</b>\n\n"
+    # Add emoji based on position (green for top 10, red for others)
+    emoji = "🟢" if position <= 10 else "🔴"
     
-    for i, coin in enumerate(coins[:50], 1):
-        symbol = coin["symbol"]
-        price = coin["price"]
-        currency = coin["currency"]
-        
-        # Add emoji based on position (green for top 10, red for others)
-        emoji = "🟢" if i <= 10 else "🔴"
-        
-        # Format price with commas
-        try:
-            price_float = float(price)
-            if price_float >= 1000:
-                formatted_price = f"{price_float:,.1f}"
-            else:
-                formatted_price = f"{price_float:.4f}"
-        except:
-            formatted_price = price
-        
-        message += f"{emoji} {symbol}: {formatted_price} {currency.upper()}\n"
+    # Format price with commas
+    try:
+        price_float = float(price)
+        if price_float >= 1000:
+            formatted_price = f"{price_float:,.1f}"
+        else:
+            formatted_price = f"{price_float:.4f}"
+    except:
+        formatted_price = price
     
-    return message
+    return f"{emoji} {symbol}: {formatted_price} {currency.upper()}"
 
 @app.get("/")
 async def root():
@@ -91,18 +101,21 @@ async def crawl_and_send():
         if not coins:
             raise HTTPException(status_code=500, detail="Failed to fetch coin data")
         
-        # Format message
-        message = format_coin_message(coins)
+        # Format individual messages for each coin
+        messages = []
+        for i, coin in enumerate(coins[:50], 1):
+            message = format_coin_message(coin, i)
+            messages.append(message)
         
         # Send to Telegram
         sender = TelegramSender(TELEGRAM_TOKEN, TELEGRAM_CHANNEL)
-        success = await sender.send_message(message)
+        success = await sender.send_multiple_messages(messages)
         
         if success:
             return {
                 "status": "success",
-                "message": f"Sent {len(coins)} coins to Telegram",
-                "coins_count": len(coins)
+                "message": f"Sent {len(messages)} coin prices to Telegram",
+                "coins_count": len(messages)
             }
         else:
             raise HTTPException(status_code=500, detail="Failed to send to Telegram")
