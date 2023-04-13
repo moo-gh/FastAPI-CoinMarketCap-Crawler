@@ -11,12 +11,13 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class CoinScheduler:
     def __init__(self, api_url="http://localhost:8000", interval_minutes=30):
         self.api_url = api_url
         self.interval_minutes = interval_minutes
         self.running = False
-    
+
     async def send_update(self):
         """Send coin update to Telegram"""
         try:
@@ -29,16 +30,18 @@ class CoinScheduler:
                         logger.error(f"Failed to send update: {response.status}")
         except Exception as e:
             logger.error(f"Error sending update: {e}")
-    
+
     async def run_scheduler(self):
         """Run the scheduler loop"""
         self.running = True
         logger.info(f"Starting scheduler with {self.interval_minutes} minute intervals")
-        
+
         while self.running:
             try:
                 await self.send_update()
-                logger.info(f"Waiting {self.interval_minutes} minutes until next update...")
+                logger.info(
+                    f"Waiting {self.interval_minutes} minutes until next update..."
+                )
                 await asyncio.sleep(self.interval_minutes * 60)
             except KeyboardInterrupt:
                 logger.info("Scheduler stopped by user")
@@ -46,23 +49,25 @@ class CoinScheduler:
             except Exception as e:
                 logger.error(f"Scheduler error: {e}")
                 await asyncio.sleep(60)  # Wait 1 minute before retrying
-    
+
     def stop(self):
         """Stop the scheduler"""
         self.running = False
+
 
 async def main():
     # Get interval from environment or use default
     interval = int(os.getenv("UPDATE_INTERVAL_MINUTES", "30"))
     api_url = os.getenv("API_URL", "http://localhost:8000")
-    
+
     scheduler = CoinScheduler(api_url=api_url, interval_minutes=interval)
-    
+
     try:
         await scheduler.run_scheduler()
     except KeyboardInterrupt:
         logger.info("Shutting down scheduler...")
         scheduler.stop()
 
+
 if __name__ == "__main__":
-    asyncio.run(main()) 
+    asyncio.run(main())
