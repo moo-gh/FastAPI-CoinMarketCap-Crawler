@@ -96,14 +96,15 @@ async def crawl_and_send():
     try:
         # Crawl coins
         crawler = CoinMarketCapCrawler()
-        coins = crawler.get_top_coins(50)
+        max_coins = 5
+        coins = crawler.get_top_coins(max_coins)
 
         if not coins:
             raise HTTPException(status_code=500, detail="Failed to fetch coin data")
 
         # Format individual messages for each coin
         messages = []
-        for i, coin in enumerate(coins[:50], 1):
+        for i, coin in enumerate(coins[:max_coins], 1):
             message = format_coin_message(coin, i)
             messages.append(message)
 

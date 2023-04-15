@@ -1,7 +1,10 @@
 import os
 import requests
 import logging
-from typing import List, Dict, Optional
+import json
+import re
+from bs4 import BeautifulSoup
+from typing import List, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -60,8 +63,7 @@ class CoinMarketCapCrawler:
             response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
 
-            from bs4 import BeautifulSoup
-
+            
             soup = BeautifulSoup(response.content, "html.parser")
             coins = []
 
@@ -71,9 +73,6 @@ class CoinMarketCapCrawler:
             for script in scripts:
                 if script.string and "window.__APOLLO_STATE__" in script.string:
                     # Extract JSON data from Apollo state
-                    import json
-                    import re
-
                     json_match = re.search(
                         r"window\.__APOLLO_STATE__\s*=\s*({.*?});",
                         script.string,
