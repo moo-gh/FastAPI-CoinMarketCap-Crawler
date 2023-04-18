@@ -1,80 +1,19 @@
-import os
-import asyncio
-import requests
-from fastapi import FastAPI, HTTPException
-from telegram import Bot
-from dotenv import load_dotenv
 import logging
+
+from dotenv import load_dotenv
+from fastapi import Query
+from fastapi import FastAPI, HTTPException
+
+from utils import format_coin_message
 from crawler import CoinMarketCapCrawler
+from social import bot, TELEGRAM_CHANNEL, TELEGRAM_TOKEN, TelegramSender
 
-# Load environment variables
+
 load_dotenv()
-
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="CoinMarketCap Crawler", version="1.0.0")
-
-# Initialize Telegram bot
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-TELEGRAM_CHANNEL = os.getenv("TELEGRAM_CHANNEL")
-bot = Bot(token=TELEGRAM_TOKEN) if TELEGRAM_TOKEN else None
-
-
-class TelegramSender:
-    def __init__(self, bot_token, channel_id):
-        self.bot = Bot(token=bot_token)
-        self.channel_id = channel_id
-
-    async def send_message(self, message):
-        """Send message to Telegram channel"""
-        try:
-            await self.bot.send_message(
-                chat_id=self.channel_id, text=message, parse_mode="HTML"
-            )
-            logger.info("Message sent to Telegram successfully")
-            return True
-        except Exception as e:
-            logger.error(f"Error sending message to Telegram: {e}")
-            return False
-
-    async def send_multiple_messages(self, messages):
-        """Send multiple messages to Telegram channel"""
-        success_count = 0
-        for message in messages:
-            try:
-                await self.bot.send_message(chat_id=self.channel_id, text=message)
-                success_count += 1
-                # Small delay to avoid rate limiting
-                await asyncio.sleep(0.1)
-            except Exception as e:
-                logger.error(f"Error sending message '{message}': {e}")
-
-        logger.info(f"Sent {success_count}/{len(messages)} messages to Telegram")
-        return success_count > 0
-
-
-def format_coin_message(coin, position):
-    """Format single coin data for Telegram message"""
-    symbol = coin["symbol"]
-    price = coin["price"]
-    currency = coin["currency"]
-
-    # Add emoji based on position (green for top 10, red for others)
-    emoji = "🟢" if position <= 10 else "🔴"
-
-    # Format price with commas
-    try:
-        price_float = float(price)
-        if price_float >= 1000:
-            formatted_price = f"{price_float:,.1f}"
-        else:
-            formatted_price = f"{price_float:.4f}"
-    except:
-        formatted_price = price
-
-    return f"{emoji} {symbol}: {formatted_price} {currency.upper()}"
 
 
 @app.get("/")
@@ -88,7 +27,18 @@ async def health_check():
 
 
 @app.post("/crawl-and-send")
-async def crawl_and_send():
+async def crawl_and_send(
+    send_multiple: bool = Query(
+        False,
+        description="If true, send each coin as a separate message. If false (default), send all coins in one message.",
+    ),
+    max_coins: int = Query(
+        5,
+        ge=1,
+        le=50,
+        description="Number of top coins to fetch and send (default: 5, max: 50).",
+    ),
+):
     """Crawl CoinMarketCap and send to Telegram"""
     if not bot or not TELEGRAM_CHANNEL:
         raise HTTPException(status_code=500, detail="Telegram configuration missing")
@@ -96,27 +46,42 @@ async def crawl_and_send():
     try:
         # Crawl coins
         crawler = CoinMarketCapCrawler()
-        max_coins = 5
         coins = crawler.get_top_coins(max_coins)
 
         if not coins:
             raise HTTPException(status_code=500, detail="Failed to fetch coin data")
 
-        # Format individual messages for each coin
-        messages = []
-        for i, coin in enumerate(coins[:max_coins], 1):
-            message = format_coin_message(coin, i)
-            messages.append(message)
-
-        # Send to Telegram
         sender = TelegramSender(TELEGRAM_TOKEN, TELEGRAM_CHANNEL)
-        success = await sender.send_multiple_messages(messages)
+
+        if send_multiple:
+            # Format individual messages for each coin
+            messages = []
+            for i, coin in enumerate(coins[:max_coins], 1):
+                message = format_coin_message(coin, i)
+                messages.append(message)
+            success = await sender.send_multiple_messages(messages)
+            sent_count = len(messages)
+        else:
+            # Send all coins in one message
+            message_lines = [
+                format_coin_message(coin, i)
+                for i, coin in enumerate(coins[:max_coins], 1)
+            ]
+            full_message = "\n".join(message_lines)
+            await sender.bot.send_message(chat_id=TELEGRAM_CHANNEL, text=full_message)
+            success = True
+            sent_count = 1
 
         if success:
             return {
                 "status": "success",
-                "message": f"Sent {len(messages)} coin prices to Telegram",
-                "coins_count": len(messages),
+                "message": (
+                    f"Sent {len(coins) if not send_multiple else sent_count} "
+                    f"{'coin prices in one message' if not send_multiple else 'messages'} to Telegram"
+                ),
+                "coins_count": len(coins),
+                "messages_sent": sent_count,
+                "send_multiple": send_multiple,
             }
         else:
             raise HTTPException(status_code=500, detail="Failed to send to Telegram")
