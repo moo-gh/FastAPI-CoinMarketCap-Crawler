@@ -3,13 +3,13 @@ import redis
 import logging
 
 logger = logging.getLogger(__name__)
+REDIS_URL = "redis://fastapi_crawler_redis:6379"
 
 # Redis connection
 def get_redis_client():
     """Get Redis client with connection fallback"""
     try:
-        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
-        client = redis.from_url(redis_url, decode_responses=True)
+        client = redis.from_url(REDIS_URL, decode_responses=True)
         # Test connection
         client.ping()
         return client
