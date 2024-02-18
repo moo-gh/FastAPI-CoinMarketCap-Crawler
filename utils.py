@@ -5,6 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 REDIS_URL = "redis://fastapi_crawler_redis:6379"
 
+
 # Redis connection
 def get_redis_client():
     """Get Redis client with connection fallback"""
@@ -17,6 +18,7 @@ def get_redis_client():
         logger.warning(f"Redis connection failed: {e}. Using fallback cache.")
         return None
 
+
 def get_cached_price(symbol):
     """Get cached price for a symbol from Redis"""
     try:
@@ -28,6 +30,7 @@ def get_cached_price(symbol):
         logger.error(f"Error getting cached price for {symbol}: {e}")
     return None
 
+
 def set_cached_price(symbol, price):
     """Set cached price for a symbol in Redis"""
     try:
@@ -37,6 +40,7 @@ def set_cached_price(symbol, price):
             client.setex(f"price:{symbol}", 86400, str(price))
     except Exception as e:
         logger.error(f"Error setting cached price for {symbol}: {e}")
+
 
 def format_coin_message(coin, position):
     """Format single coin data for Telegram message"""
@@ -52,10 +56,10 @@ def format_coin_message(coin, position):
 
     # Get last cached price from Redis
     last_price = get_cached_price(symbol)
-    
+
     # Set cached price in Redis for next comparison
     set_cached_price(symbol, current_price)
-    
+
     # Add emoji based on price comparison (green if price increased, red if decreased or same)
     if last_price is not None and current_price > last_price:
         emoji = "🟢"

@@ -1,12 +1,14 @@
 import logging
 
 from dotenv import load_dotenv
-from fastapi import Query
+from fastapi import Query, Depends
 from fastapi import FastAPI, HTTPException
 
 from utils import format_coin_message
 from crawler import CoinMarketCapCrawler
 from social import bot, TELEGRAM_CHANNEL, TELEGRAM_TOKEN, TelegramSender
+from auth import verify_api_token
+from database import create_tables, ApiToken
 
 
 load_dotenv()
@@ -14,6 +16,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="CoinMarketCap Crawler", version="1.0.0")
+
+
+# Create database tables on startup
+@app.on_event("startup")
+async def startup_event():
+    create_tables()
+    logger.info("Database tables created successfully")
 
 
 @app.get("/")
@@ -38,6 +47,7 @@ async def crawl_and_send(
         le=50,
         description="Number of top coins to fetch and send (default: 5, max: 50).",
     ),
+    current_user: ApiToken = Depends(verify_api_token),
 ):
     """Crawl CoinMarketCap and send to Telegram"""
     if not bot or not TELEGRAM_CHANNEL:
@@ -92,7 +102,7 @@ async def crawl_and_send(
 
 
 @app.get("/coins")
-async def get_coins():
+async def get_coins(current_user: ApiToken = Depends(verify_api_token)):
     """Get top coins without sending to Telegram"""
     try:
         crawler = CoinMarketCapCrawler()
