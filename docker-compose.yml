@@ -1,6 +1,7 @@
 services:
   fastapi_crawler_redis:
     image: redis:6-alpine
+    container_name: fastapi_crawler_redis
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
