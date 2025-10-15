@@ -13,16 +13,21 @@ logger = logging.getLogger(__name__)
 
 
 class CoinScheduler:
-    def __init__(self, api_url="http://localhost:8000", interval_minutes=30):
+    def __init__(self, api_url="http://localhost:8000", interval_minutes=30, api_token=None):
         self.api_url = api_url
         self.interval_minutes = interval_minutes
+        self.api_token = api_token
         self.running = False
 
     async def send_update(self):
         """Send coin update to Telegram"""
         try:
+            headers = {}
+            if self.api_token:
+                headers["Authorization"] = f"Bearer {self.api_token}"
+            
             async with aiohttp.ClientSession() as session:
-                async with session.post(f"{self.api_url}/crawl-and-send") as response:
+                async with session.post(f"{self.api_url}/crawl-and-send", headers=headers) as response:
                     if response.status == 200:
                         result = await response.json()
                         logger.info(f"Update sent successfully: {result}")
@@ -59,8 +64,13 @@ async def main():
     # Get interval from environment or use default
     interval = int(os.getenv("UPDATE_INTERVAL_MINUTES", "30"))
     api_url = os.getenv("API_URL", "http://localhost:8000")
+    api_token = os.getenv("API_TOKEN")
+    
+    if not api_token:
+        logger.error("API_TOKEN environment variable is required")
+        return
 
-    scheduler = CoinScheduler(api_url=api_url, interval_minutes=interval)
+    scheduler = CoinScheduler(api_url=api_url, interval_minutes=interval, api_token=api_token)
 
     try:
         await scheduler.run_scheduler()
