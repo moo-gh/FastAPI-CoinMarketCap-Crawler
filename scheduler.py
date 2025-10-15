@@ -23,7 +23,7 @@ class CoinScheduler:
         self.api_url = api_url
         self.interval_minutes = interval_minutes
         self.api_token = api_token
-        self.specific_coins = specific_coins or ["BTC", "ETH", "BNB", "SOL", "TON", "PAXG", "KAG"]
+        self.specific_coins = specific_coins or ["BTC", "ETH", "BNB", "SOL", "TON", "CAKE", "PAXG", "KAG"]
         self.running = False
 
     async def send_update(self):
