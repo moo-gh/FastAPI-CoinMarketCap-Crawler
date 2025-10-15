@@ -52,6 +52,63 @@ class CoinMarketCapCrawler:
             logger.error(f"Error fetching from API: {e}")
             return self._fallback_crawl(limit)
 
+    def get_specific_coins(self, symbols: List[str]) -> List[Dict]:
+        """Get specific coins by their symbols (e.g., ['BTC', 'TON', 'SOL'])"""
+        try:
+            if not self.api_key:
+                logger.warning("No API key provided, cannot fetch specific coins")
+                return self._fallback_specific_coins(symbols)
+
+            url = f"{self.base_url}/cryptocurrency/quotes/latest"
+            # Join symbols with comma for API request
+            symbol_param = ",".join(symbols)
+            params = {"symbol": symbol_param, "convert": "USD"}
+
+            response = requests.get(
+                url, headers=self.headers, params=params, timeout=10
+            )
+            response.raise_for_status()
+
+            data = response.json()
+            coins = []
+
+            # The response data is keyed by symbol
+            for symbol in symbols:
+                coin_data = data.get("data", {}).get(symbol)
+                if coin_data:
+                    price = coin_data.get("quote", {}).get("USD", {}).get("price", 0)
+                    if price:
+                        coins.append(
+                            {"symbol": symbol, "price": str(price), "currency": "usdt"}
+                        )
+                else:
+                    logger.warning(f"No data found for symbol: {symbol}")
+
+            return coins
+
+        except Exception as e:
+            logger.error(f"Error fetching specific coins from API: {e}")
+            return self._fallback_specific_coins(symbols)
+
+    def _fallback_specific_coins(self, symbols: List[str]) -> List[Dict]:
+        """Fallback method for getting specific coins using web scraping"""
+        try:
+            # Fetch all coins first
+            all_coins = self._fallback_crawl(limit=200)
+            
+            # Filter to only requested symbols
+            symbols_upper = [s.upper() for s in symbols]
+            specific_coins = [
+                coin for coin in all_coins 
+                if coin.get("symbol", "").upper() in symbols_upper
+            ]
+            
+            return specific_coins
+
+        except Exception as e:
+            logger.error(f"Error in fallback specific coins: {e}")
+            return []
+
     def _fallback_crawl(self, limit: int = 50) -> List[Dict]:
         """Fallback method using web scraping"""
         try:
