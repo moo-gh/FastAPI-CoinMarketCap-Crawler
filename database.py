@@ -7,10 +7,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-POSTGRES_USER = os.getenv("POSTGRES_USER")
+POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 DATABASE_URL = (
-    f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@fastapi_crawler_db:5432/postgres"
+    f"postgresql://{POSTGRES_USERNAME}:{POSTGRES_PASSWORD}@fastapi_crawler_db:5432/postgres"
 )
 
 engine = create_engine(DATABASE_URL)
