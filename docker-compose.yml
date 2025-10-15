@@ -54,7 +54,7 @@ services:
     environment:
       - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
       - TELEGRAM_CHANNEL=${TELEGRAM_CHANNEL}
-      - UPDATE_INTERVAL_MINUTES=${UPDATE_INTERVAL_MINUTES:-5}
+      - UPDATE_INTERVAL_MINUTES=${UPDATE_INTERVAL_MINUTES:-10}
       - API_URL=http://fastapi-crawler_app:8046
       - API_TOKEN=${API_TOKEN}
     env_file:
