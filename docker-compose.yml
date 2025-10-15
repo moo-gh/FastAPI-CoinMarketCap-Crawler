@@ -10,6 +10,7 @@ services:
 
   fastapi_crawler_db:
     image: postgres:14-alpine
+    container_name: fastapi_crawler_db
     volumes:
       - ./fastapi_crawler_db/:/var/lib/postgresql/data
       - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
@@ -23,6 +24,7 @@ services:
       retries: 3
 
   fastapi-crawler_app:
+    container_name: fastapi-crawler_app
     build: .
     ports:
       - 8046:8046
@@ -45,6 +47,7 @@ services:
       retries: 3
 
   fastapi-crawler_scheduler:
+    container_name: fastapi-crawler_scheduler
     build: .
     command: python scheduler.py
     environment:
