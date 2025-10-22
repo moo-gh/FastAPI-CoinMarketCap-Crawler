@@ -134,15 +134,16 @@ class CoinMarketCapCrawler:
                         script.string,
                         re.DOTALL,
                     )
-                    if json_match:
-                        try:
-                            apollo_data = json.loads(json_match.group(1))
-                            # Parse Apollo state to extract coin data
-                            coins = self._parse_apollo_data(apollo_data, limit)
-                            if coins:
-                                return coins
-                        except:
-                            continue
+                    if not json_match:
+                        continue
+                    try:
+                        apollo_data = json.loads(json_match.group(1))
+                        # Parse Apollo state to extract coin data
+                        coins = self._parse_apollo_data(apollo_data, limit)
+                        if coins:
+                            return coins
+                    except:
+                        continue
 
             # If Apollo parsing fails, try table parsing
             return self._parse_table(soup, limit)
