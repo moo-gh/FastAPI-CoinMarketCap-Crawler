@@ -95,14 +95,13 @@ class CoinMarketCapCrawler:
         try:
             # Fetch all coins first
             all_coins = self._fallback_crawl(limit=200)
-            
+
             # Filter to only requested symbols
             symbols_upper = [s.upper() for s in symbols]
             specific_coins = [
                 coin for coin in all_coins 
                 if coin.get("symbol", "").upper() in symbols_upper
             ]
-            
             return specific_coins
 
         except Exception as e:
