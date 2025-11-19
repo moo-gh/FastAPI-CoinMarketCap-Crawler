@@ -1,0 +1,36 @@
+{
+	"info": {
+		"_postman_id": "95b0a601-abda-4b1f-8a1d-b94daf7e1501",
+		"name": "FastAPI Crawler",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "39098349"
+	},
+	"item": [
+		{
+			"name": "New Request",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "https://fastapi-crawler.m-gh.com/crawl-and-send?max_coins=10",
+					"protocol": "https",
+					"host": [
+						"fastapi-crawler",
+						"m-gh",
+						"com"
+					],
+					"path": [
+						"crawl-and-send"
+					],
+					"query": [
+						{
+							"key": "max_coins",
+							"value": "10"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
