@@ -35,9 +35,9 @@ def create_token(name: str, token: str = None):
         db.refresh(api_token)
 
         print(f"Created API token:")
-        print(f"  Name: {api_token.name}")
-        print(f"  Token: {api_token.token}")
-        print(f"  Created: {api_token.created_at}")
+        print(f"Name: {api_token.name}")
+        print(f"Token: {api_token.token}")
+        print(f"Created: {api_token.created_at.strftime('%Y-%m-%d %H:%M:%S')}")
         return True
 
     except Exception as e:

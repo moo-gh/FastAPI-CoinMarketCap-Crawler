@@ -15,7 +15,7 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="CoinMarketCap Crawler", version="1.0.0")
+app = FastAPI(title="CoinMarketCap Crawler", version="1.0.1")
 
 
 # Create database tables on startup
